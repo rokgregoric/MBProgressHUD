@@ -783,13 +783,18 @@ static const CGFloat kDetailsLabelFontSize = 12.f;
 
 @end
 
+@interface MBRoundProgressView ()
+
+@property (nonatomic, assign) float drawProgress;
+
+@end
 
 @implementation MBRoundProgressView
 
 #pragma mark - Lifecycle
 
 - (id)init {
-	return [self initWithFrame:CGRectMake(0.f, 0.f, 37.f, 37.f)];
+	return [self initWithFrame:CGRectMake(0.f, 0.f, 80.f, 80.f)];
 }
 
 - (id)initWithFrame:(CGRect)frame {
@@ -798,6 +803,7 @@ static const CGFloat kDetailsLabelFontSize = 12.f;
 		self.backgroundColor = [UIColor clearColor];
 		self.opaque = NO;
 		_progress = 0.f;
+		_drawProgress = 0.f;
 		_annular = NO;
 		_progressTintColor = [[UIColor alloc] initWithWhite:1.f alpha:1.f];
 		_backgroundTintColor = [[UIColor alloc] initWithWhite:1.f alpha:.1f];
@@ -818,11 +824,16 @@ static const CGFloat kDetailsLabelFontSize = 12.f;
 #pragma mark - Drawing
 
 - (void)drawRect:(CGRect)rect {
-	
+	if (self.progress > self.drawProgress) {
+		self.drawProgress += 0.01f;
+		[self performSelector:@selector(setNeedsDisplay) withObject:nil afterDelay:0.f];
+	}
+
 	CGRect allRect = self.bounds;
-	CGRect circleRect = CGRectInset(allRect, 2.0f, 2.0f);
+	CGRect circleRect = CGRectInset(allRect, 17.0f, 17.0f);
 	CGContextRef context = UIGraphicsGetCurrentContext();
-	
+	CGPoint center = CGPointMake(allRect.size.width / 2, allRect.size.height / 2);
+
 	if (_annular) {
 		// Draw background
 		BOOL isPreiOS7 = kCFCoreFoundationVersionNumber < kCFCoreFoundationVersionNumber_iOS_7_0;
@@ -830,8 +841,7 @@ static const CGFloat kDetailsLabelFontSize = 12.f;
 		UIBezierPath *processBackgroundPath = [UIBezierPath bezierPath];
 		processBackgroundPath.lineWidth = lineWidth;
 		processBackgroundPath.lineCapStyle = kCGLineCapButt;
-		CGPoint center = CGPointMake(self.bounds.size.width/2, self.bounds.size.height/2);
-		CGFloat radius = (self.bounds.size.width - lineWidth)/2;
+		CGFloat radius = (circleRect.size.width - lineWidth)/2;
 		CGFloat startAngle = - ((float)M_PI / 2); // 90 degrees
 		CGFloat endAngle = (2 * (float)M_PI) + startAngle;
 		[processBackgroundPath addArcWithCenter:center radius:radius startAngle:startAngle endAngle:endAngle clockwise:YES];
@@ -841,7 +851,7 @@ static const CGFloat kDetailsLabelFontSize = 12.f;
 		UIBezierPath *processPath = [UIBezierPath bezierPath];
 		processPath.lineCapStyle = isPreiOS7 ? kCGLineCapRound : kCGLineCapSquare;
 		processPath.lineWidth = lineWidth;
-		endAngle = (self.progress * 2 * (float)M_PI) + startAngle;
+		endAngle = (self.drawProgress * 2 * (float)M_PI) + startAngle;
 		[processPath addArcWithCenter:center radius:radius startAngle:startAngle endAngle:endAngle clockwise:YES];
 		[_progressTintColor set];
 		[processPath stroke];
@@ -853,10 +863,9 @@ static const CGFloat kDetailsLabelFontSize = 12.f;
 		CGContextFillEllipseInRect(context, circleRect);
 		CGContextStrokeEllipseInRect(context, circleRect);
 		// Draw progress
-		CGPoint center = CGPointMake(allRect.size.width / 2, allRect.size.height / 2);
-		CGFloat radius = (allRect.size.width - 4) / 2;
+		CGFloat radius = (circleRect.size.width - 1.0f) / 2;
 		CGFloat startAngle = - ((float)M_PI / 2); // 90 degrees
-		CGFloat endAngle = (self.progress * 2 * (float)M_PI) + startAngle;
+		CGFloat endAngle = (self.drawProgress * 2 * (float)M_PI) + startAngle;
 		[_progressTintColor setFill];
 		CGContextMoveToPoint(context, center.x, center.y);
 		CGContextAddArc(context, center.x, center.y, radius, startAngle, endAngle, 0);
